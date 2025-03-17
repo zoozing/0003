@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级广播接收</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .class-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .connection-status {
+            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 30px;
+        }
+
+        .connected {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .disconnected {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .message-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .message-list {
+            max-height: calc(100vh - 240px);
+            overflow-y: auto;
+        }
+
+        .message {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .message-sender {
+            font-weight: bold;
+        }
+
+        .message-time {
+            color: #999;
+        }
+
+        .message-content {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+            word-break: break-all;
+            white-space: pre-wrap;
+            padding: 10px 0;
+        }
+
+        .message-content button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .message-content button:hover {
+            background: #1976d2;
+        }
+
+        .search-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-btn {
+            padding: 8px 20px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .date-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .date-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .messages-container {
+            padding: 20px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+
+        .message .time {
+            color: #666;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+
+        .message .sender {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .message .content {
+            margin-top: 5px;
+        }
+
+        .message audio {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .message-date-label {
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        /* 广播显示模式样式 */
+        /* 顶部横幅样式 */
+        .banner-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: rgba(33, 150, 243, 0.9);
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: slideInDown 0.5s;
+            text-align: center;
+        }
+        
+        .banner-message .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        /* 全屏显示样式 */
+        .fullscreen-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(33, 150, 243, 0.95);
+            color: white;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            text-align: center;
+            padding: 20px;
+            animation: fadeIn 0.5s;
+        }
+        
+        .fullscreen-message .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* 弹窗显示样式 */
+        .popup-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 500px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            padding: 20px;
+            animation: zoomIn 0.3s;
+        }
+        
+        .popup-message .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .popup-message .message-title {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .popup-message .close-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .popup-message .message-content {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .popup-message .message-footer {
+            text-align: right;
+        }
+        
+        .popup-message .ok-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        /* 动画效果 */
+        @keyframes slideInDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes zoomIn {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#" id="className">班级广播接收</a>
+            <button class="btn btn-outline-light" onclick="logout()">退出登录</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <div class="class-name" id="className"></div>
+            <div class="connection-status" id="connectionStatus">未连接</div>
+        </div>
+
+        <div class="search-container">
+            <div class="search-header">
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索消息内容...">
+                <button class="search-btn" onclick="searchMessages()">搜索</button>
+            </div>
+            <div class="date-filter">
+                <label for="startDate">开始日期:</label>
+                <input type="date" class="date-input" id="startDate" title="开始日期">
+                <label for="endDate">结束日期:</label>
+                <input type="date" class="date-input" id="endDate" title="结束日期">
+                <button class="search-btn" onclick="filterByDate()">按日期筛选</button>
+            </div>
+        </div>
+
+        <div class="message-container">
+            <div id="messages" class="messages-container">
+                <!-- 消息将被动态插入到这里 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messages = [];
+        const className = new URLSearchParams(window.location.search).get('class');
+        document.getElementById('className').textContent = className || '未知班级';
+
+        // 检查登录状态
+        function checkAuth() {
+            const token = localStorage.getItem('classToken');
+            const className = localStorage.getItem('className');
+            if (!token || !className) {
+                window.location.href = '/class/login.html';
+                return null;
+            }
+            document.getElementById('className').textContent = className;
+            return token;
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('classToken');
+            localStorage.removeItem('className');
+            window.location.href = '/class/login.html';
+        }
+
+        // 播放音频
+        async function playAudio(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const audioData = await response.arrayBuffer();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffer = await audioContext.decodeAudioData(audioData);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start(0);
+            } catch (error) {
+                console.error('播放音频失败:', error);
+                alert('播放音频失败，请重试');
+            }
+        }
+
+        // 添加消息到列表
+        function addMessage(data) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const header = document.createElement('div');
+            header.className = 'message-header';
+            
+            // 根据发送者角色和描述显示不同的发送者名称
+            let senderDisplay = '管理员';
+            if (data.senderRole === 'teacher') {
+                senderDisplay = data.senderDescription || data.sender;
+            }
+            
+            header.innerHTML = `
+                <span class="message-sender">${senderDisplay}</span>
+                <span class="message-time">${data.time}</span>
+            `;
+            messageDiv.appendChild(header);
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            if (data.type === 'text') {
+                content.textContent = data.content;
+            } else if (data.type === 'audio') {
+                const button = document.createElement('button');
+                button.textContent = '播放语音';
+                button.onclick = () => {
+                    const audio = new Audio(data.content);
+                    audio.play();
+                };
+                content.appendChild(button);
+            }
+
+            messageDiv.appendChild(content);
+            
+            const messageList = document.getElementById('messages');
+            messageList.insertBefore(messageDiv, messageList.firstChild);
+            
+            // 保存消息到历史记录
+            messages.unshift({
+                type: data.type,
+                content: data.content,
+                time: data.time,
+                sender: senderDisplay,
+                senderRole: data.senderRole,
+                senderDescription: data.senderDescription,
+                displayMode: data.displayMode || 'banner' // 保存显示模式
+            });
+        }
+
+        // 显示横幅消息
+        function showBannerMessage(data) {
+            // 删除现有的横幅消息
+            const existingBanners = document.querySelectorAll('.banner-message');
+            existingBanners.forEach(banner => banner.remove());
+            
+            // 创建新的横幅消息
+            const banner = document.createElement('div');
+            banner.className = 'banner-message';
+            
+            // 根据发送者角色和描述显示不同的发送者名称
+            let senderDisplay = '管理员';
+            if (data.senderRole === 'teacher') {
+                senderDisplay = data.senderDescription || data.sender;
+            }
+            
+            // 文本消息
+            if (data.type === 'text') {
+                banner.innerHTML = `
+                    <strong>${senderDisplay}:</strong> ${data.content}
+                    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+                `;
+            } 
+            // 音频消息
+            else if (data.type === 'audio') {
+                banner.innerHTML = `
+                    <strong>${senderDisplay}:</strong> 
+                    <button onclick="const audio = new Audio('${data.content}'); audio.play();">播放语音</button>
+                    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+                `;
+            }
+            
+            document.body.appendChild(banner);
+            
+            // 60秒后自动关闭
+            setTimeout(() => {
+                if (banner.parentElement) {
+                    banner.classList.add('fadeOut');
+                    setTimeout(() => banner.remove(), 500);
+                }
+            }, 60000);
+        }
+        
+        // 显示全屏消息
+        function showFullscreenMessage(data) {
+            // 删除现有的全屏消息
+            const existingFullscreen = document.querySelectorAll('.fullscreen-message');
+            existingFullscreen.forEach(fullscreen => fullscreen.remove());
+            
+            // 创建全屏消息
+            const fullscreen = document.createElement('div');
+            fullscreen.className = 'fullscreen-message';
+            
+            // 根据发送者角色和描述显示不同的发送者名称
+            let senderDisplay = '管理员';
+            if (data.senderRole === 'teacher') {
+                senderDisplay = data.senderDescription || data.sender;
+            }
+            
+            // 文本消息
+            if (data.type === 'text') {
+                fullscreen.innerHTML = `
+                    <div style="margin-bottom: 20px;"><strong>${senderDisplay} 发送:</strong></div>
+                    <div style="font-size: 32px; margin-bottom: 30px;">${data.content}</div>
+                    <button class="close-btn" onclick="this.parentElement.remove()">关闭 ×</button>
+                `;
+            } 
+            // 音频消息
+            else if (data.type === 'audio') {
+                fullscreen.innerHTML = `
+                    <div style="margin-bottom: 20px;"><strong>${senderDisplay} 发送:</strong></div>
+                    <div style="font-size: 32px; margin-bottom: 30px;">语音消息</div>
+                    <button style="background: white; color: #2196f3; padding: 10px 20px; border-radius: 4px; border: none; margin-bottom: 20px;" 
+                            onclick="const audio = new Audio('${data.content}'); audio.play();">
+                        播放语音
+                    </button>
+                    <button class="close-btn" onclick="this.parentElement.remove()">关闭 ×</button>
+                `;
+            }
+            
+            document.body.appendChild(fullscreen);
+        }
+        
+        // 显示弹窗消息
+        function showPopupMessage(data) {
+            // 删除现有的弹窗消息
+            const existingPopups = document.querySelectorAll('.popup-message, .overlay');
+            existingPopups.forEach(popup => popup.remove());
+            
+            // 创建遮罩层
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            document.body.appendChild(overlay);
+            
+            // 创建弹窗消息
+            const popup = document.createElement('div');
+            popup.className = 'popup-message';
+            
+            // 根据发送者角色和描述显示不同的发送者名称
+            let senderDisplay = '管理员';
+            if (data.senderRole === 'teacher') {
+                senderDisplay = data.senderDescription || data.sender;
+            }
+            
+            // 文本消息
+            if (data.type === 'text') {
+                popup.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-title">${senderDisplay} 发送的消息</span>
+                        <button class="close-btn" onclick="document.querySelector('.overlay').remove(); this.parentElement.parentElement.remove();">×</button>
+                    </div>
+                    <div class="message-content">${data.content}</div>
+                    <div class="message-footer">
+                        <button class="ok-btn" onclick="document.querySelector('.overlay').remove(); this.parentElement.parentElement.remove();">确定</button>
+                    </div>
+                `;
+            } 
+            // 音频消息
+            else if (data.type === 'audio') {
+                popup.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-title">${senderDisplay} 发送的语音消息</span>
+                        <button class="close-btn" onclick="document.querySelector('.overlay').remove(); this.parentElement.parentElement.remove();">×</button>
+                    </div>
+                    <div class="message-content">
+                        <button onclick="const audio = new Audio('${data.content}'); audio.play();">播放语音</button>
+                    </div>
+                    <div class="message-footer">
+                        <button class="ok-btn" onclick="document.querySelector('.overlay').remove(); this.parentElement.parentElement.remove();">确定</button>
+                    </div>
+                `;
+            }
+            
+            document.body.appendChild(popup);
+        }
+        
+        // 处理并显示新消息
+        function processNewMessage(data) {
+            // 添加到消息历史
+            addMessage(data);
+            
+            // 根据显示模式处理消息显示
+            const displayMode = data.displayMode || 'banner';
+            console.log('处理新消息，使用显示模式:', displayMode, '数据类型:', typeof displayMode);
+            
+            // 在处理前将显示模式转换为小写，以确保一致性
+            const normalizedMode = String(displayMode).toLowerCase();
+            console.log('标准化后的显示模式:', normalizedMode);
+            
+            switch (normalizedMode) {
+                case 'banner':
+                    console.log('显示为横幅消息');
+                    showBannerMessage(data);
+                    break;
+                case 'fullscreen':
+                    console.log('显示为全屏消息');
+                    showFullscreenMessage(data);
+                    break;
+                case 'popup':
+                    console.log('显示为弹窗消息');
+                    showPopupMessage(data);
+                    break;
+                default:
+                    console.log('默认显示为横幅消息');
+                    showBannerMessage(data);
+                    break;
+            }
+        }
+
+        // 连接WebSocket
+        function connectWebSocket() {
+            const token = checkAuth();
+            if (!token) return;
+
+            const className = localStorage.getItem('className');
+            if (!className) {
+                console.error('No class name found');
+                return;
+            }
+
+            if (ws) {
+                ws.close();
+            }
+
+            // 使用当前页面URL中的主机名和端口
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const wsUrl = `${protocol}//${host}`;
+            
+            console.log('Connecting to WebSocket:', wsUrl);
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('connectionStatus').textContent = '已连接';
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+                
+                // 发送身份标识
+                ws.send(JSON.stringify({
+                    type: 'identity',
+                    role: 'class',
+                    class: className,
+                    token: token
+                }));
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                document.getElementById('connectionStatus').textContent = '未连接';
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                // 5秒后重新连接
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                document.getElementById('connectionStatus').textContent = '连接错误';
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+            };
+
+            ws.onmessage = (event) => {
+                console.log('Received message:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // 处理班级状态更新
+                    if (data.type === 'classStatus') {
+                        // 班级状态更新逻辑（如果需要）
+                        console.log('收到班级状态更新:', data);
+                    }
+                    // 处理历史消息
+                    else if (data.type === 'history') {
+                        console.log('收到历史消息', data.messages?.length || 0, '条');
+                        // 清空现有消息列表
+                        const messageList = document.getElementById('messages');
+                        messageList.innerHTML = '';
+                        messages = []; // 清空消息数组
+                        
+                        if (data.messages && data.messages.length > 0) {
+                            // 处理每条历史消息
+                            data.messages.forEach(msg => {
+                                console.log('处理历史消息:', msg);
+                                const messageData = {
+                                    type: msg.type,
+                                    content: msg.content,
+                                    sender: msg.sender_token,
+                                    senderRole: msg.sender_role,
+                                    senderDescription: msg.sender_description,
+                                    time: new Date(msg.created_at).toLocaleString(),
+                                    displayMode: msg.display_mode || 'banner' // 显示模式
+                                };
+                                addMessage(messageData);
+                            });
+                            
+                            // 显示最新的一条消息（如果不是太旧的消息）
+                            const latestMsg = data.messages[0]; // 历史消息按时间降序排列，第一条是最新的
+                            const msgTime = new Date(latestMsg.created_at);
+                            const now = new Date();
+                            // 只显示10分钟内的最新消息
+                            if ((now - msgTime) < 10 * 60 * 1000) {
+                                console.log('显示最新消息，完整数据:', latestMsg);
+                                console.log('显示最新消息，显示模式:', latestMsg.display_mode, '类型:', typeof latestMsg.display_mode);
+                                const latestMsgData = {
+                                    type: latestMsg.type,
+                                    content: latestMsg.content,
+                                    sender: latestMsg.sender_token,
+                                    senderRole: latestMsg.sender_role,
+                                    senderDescription: latestMsg.sender_description,
+                                    time: new Date(latestMsg.created_at).toLocaleString(),
+                                    // 确保统一使用displayMode字段
+                                    displayMode: latestMsg.display_mode || 'banner'
+                                };
+                                
+                                // 直接使用processNewMessage函数统一处理不同显示模式
+                                processNewMessage(latestMsgData);
+                            }
+                        }
+                    }
+                    // 处理新消息
+                    else if (data.type === 'text' || data.type === 'audio') {
+                        console.log('收到新消息，显示模式:', data.displayMode);
+                        const messageData = {
+                            type: data.type,
+                            content: data.content,
+                            sender: data.sender,
+                            senderRole: data.senderRole,
+                            senderDescription: data.senderDescription,
+                            time: new Date(data.created_at).toLocaleString(),
+                            displayMode: data.displayMode || 'banner' // 显示模式
+                        };
+                        // 使用新的处理函数
+                        processNewMessage(messageData);
+                    }
+                } catch (error) {
+                    console.error('Failed to parse message:', error);
+                }
+            };
+        }
+
+        function searchMessages() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const messageList = document.getElementById('messages');
+            messageList.innerHTML = '';
+            
+            const filteredMessages = messages.filter(msg => 
+                msg.type === 'text' && msg.content.toLowerCase().includes(searchText)
+            );
+            
+            filteredMessages.forEach(msg => {
+                const messageDiv = createMessageElement(msg);
+                messageList.appendChild(messageDiv);
+            });
+        }
+
+        function filterByDate() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            endDate.setHours(23, 59, 59); // 设置为当天结束
+            
+            const messageList = document.getElementById('messages');
+            messageList.innerHTML = '';
+            
+            const filteredMessages = messages.filter(msg => {
+                const msgDate = new Date(msg.time);
+                return msgDate >= startDate && msgDate <= endDate;
+            });
+            
+            filteredMessages.forEach(msg => {
+                const messageDiv = createMessageElement(msg);
+                messageList.appendChild(messageDiv);
+            });
+        }
+
+        function createMessageElement(msg) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const header = document.createElement('div');
+            header.className = 'message-header';
+            header.innerHTML = `
+                <span class="message-sender">${msg.sender}</span>
+                <span class="message-time">${msg.time}</span>
+            `;
+            messageDiv.appendChild(header);
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            if (msg.type === 'text') {
+                content.textContent = msg.content;
+            } else if (msg.type === 'audio') {
+                const button = document.createElement('button');
+                button.textContent = '播放语音';
+                button.onclick = () => {
+                    const audio = new Audio(msg.content);
+                    audio.play();
+                };
+                content.appendChild(button);
+            }
+
+            messageDiv.appendChild(content);
+            return messageDiv;
+        }
+
+        // 初始化连接
+        connectWebSocket();
+    </script>
+</body>
+</html> 

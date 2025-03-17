@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级登录</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .login-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h2 class="login-title">班级登录</h2>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="token" class="form-label">班级口令</label>
+                    <input type="text" class="form-control" id="token" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">登录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = document.getElementById('token').value;
+
+            try {
+                const response = await fetch('/api/class/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 保存token和班级名称
+                    localStorage.setItem('classToken', data.token);
+                    localStorage.setItem('className', data.className);
+                    // 跳转到广播接收页面
+                    window.location.href = '/class/';
+                } else {
+                    alert(data.error || '登录失败');
+                }
+            } catch (error) {
+                alert('登录失败，请重试');
+            }
+        });
+    </script>
+</body>
+</html> 
