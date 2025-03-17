@@ -1,0 +1,97 @@
+<!--index.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">教师广播</text>
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+  </view>
+
+  <!-- 班级列表 -->
+  <view class="class-list">
+    <view class="section-title">班级列表 (可多选)</view>
+    <view class="class-cards">
+      <view class="class-card {{item.selected ? 'selected' : ''}}" 
+            wx:for="{{classList}}" 
+            wx:key="id"
+            data-class="{{item}}"
+            bindtap="selectClass">
+        <view class="class-name">{{item.class_name}}</view>
+        <view class="class-status {{onlineClasses[item.class_name] ? 'online' : 'offline'}}">
+          {{onlineClasses[item.class_name] ? '在线' : '离线'}}
+        </view>
+        <view class="checkbox-icon" wx:if="{{item.selected}}">✓</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="input-area">
+    <textarea class="message-input" 
+              placeholder="请输入广播内容" 
+              value="{{inputContent}}"
+              bindinput="onInputChange"
+              adjust-position="{{false}}"
+              show-confirm-bar="{{false}}"
+              maxlength="200"
+              auto-height/>
+    
+    <!-- 新增显示方式和定时选项 -->
+    <view class="options-area">
+      <view class="display-mode-selector">
+        <text class="option-title">显示方式：</text>
+        <radio-group class="radio-group" bindchange="onDisplayModeChange">
+          <label class="radio" wx:for="{{displayModes}}" wx:key="value">
+            <radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.name}}
+          </label>
+        </radio-group>
+      </view>
+      
+      <view class="schedule-option">
+        <view class="schedule-checkbox">
+          <switch bindchange="toggleSchedule" checked="{{isScheduled}}"/>
+          <text>定时发送</text>
+        </view>
+        <view class="schedule-datetime-picker" wx:if="{{isScheduled}}">
+          <picker mode="date" value="{{scheduledDate}}" bindchange="onDateChange">
+            <view class="picker">
+              日期：{{scheduledDate || '请选择日期'}}
+            </view>
+          </picker>
+          <picker mode="time" value="{{scheduledTime}}" bindchange="onTimeChange">
+            <view class="picker">
+              时间：{{scheduledTime || '请选择时间'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+    
+    <view class="button-group">
+      <button class="send-btn {{!inputContent ? 'disabled' : ''}}"
+              disabled="{{!inputContent}}"
+              bindtap="sendText">{{isScheduled ? '定时发送' : '发送'}}</button>
+      <button class="voice-btn"
+              bindtouchstart="startRecording"
+              bindtouchend="stopRecording">
+        {{isRecording ? '松开发送' : '按住说话'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 消息记录 -->
+  <view class="message-list">
+    <view class="section-title">发送记录</view>
+    <view class="message-item" wx:for="{{messages}}" wx:key="index">
+      <view class="message-header">
+        <text class="message-target">发送至: {{item.targetClass}}</text>
+        <text class="message-time">{{item.time}}</text>
+      </view>
+      <view class="message-content">
+        <block wx:if="{{item.type === 'text'}}">
+          <text>{{item.content}}</text>
+        </block>
+        <block wx:else>
+          <text>[语音消息]</text>
+        </block>
+      </view>
+    </view>
+  </view>
+</view>

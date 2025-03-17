@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="header">
+    <text class="title">教师登录</text>
+  </view>
+  
+  <view class="content">
+    <view class="input-area">
+      <input type="text" 
+             placeholder="请输入口令" 
+             value="{{token}}" 
+             bindinput="onInput"
+             class="token-input"/>
+    </view>
+    
+    <button class="login-btn" bindtap="onSubmit">登录</button>
+  </view>
+</view> 
